@@ -1,0 +1,126 @@
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{karnaugh-map}
+\usepackage{circuitikz}
+\usepackage{tikz}
+\usetikzlibrary{shapes.gates.logic.US}
+\usetikzlibrary{circuits.ee.IEC}
+ 
+\begin{document}
+\title{EE5803 - FPGA LAB \\ Assignment-2}
+\author{Gundluru Ramesh \\ EE22MTECH02001}
+ 
+\maketitle
+\section{Question}
+\textbf{Q}. Implement any one Absorption law of Boolean Algebra on Arduino using platformio.
+
+\section{Solution}
+
+The following laws are called as Absorption laws of Boolean Algebra.\\
+\\
+ $1. x+xy = x $ \\
+ $2. x(x+y) = x$ \\
+ \\
+Truth table for law 1: \\
+    \begin{table} [h]
+    \centering
+    \begin{tabular}{ | c | c | c | c | }
+    \hline
+    x & y & xy & x+xy \\ [0.5ex]
+     \hline
+    0 & 0 & 0 & 0 \\
+    0 & 1 & 0 & 0 \\
+    1 & 0 & 0 & 1 \\
+    1 & 1 & 1 & 1 \\ [1ex]
+    \hline
+    \end{tabular}
+    \end{table}
+\\
+
+\subsection{K-MAP implementation}
+
+$1. x+xy$ \\
+The SOP max terms are considered for minimizing the law1 through k-map
+
+    \begin{center}
+        \begin{karnaugh-map}[2][2][1][][]
+        \minterms{2,3}
+        \maxterms{0,1}
+        \implicant{2}{3}
+        \draw[color=black, ultra thin] (0, 2) --
+    node [pos=0.7, above right, anchor=south west] {$y$} % Y label
+    node [pos=0.7, below left, anchor=north east] {$x$} % X label
+    ++(135:1);
+    \end{karnaugh-map}
+    \end{center}
+   
+ From the k-map , the implicant is x , so output z = x+xy = x \\
+
+\subsection{implementation using NAND gate }
+ Minimal equivalent of law 1 $x+xy$ is x(obtained by k-map)
+ 
+     \begin{center}
+    \begin{tikzpicture}[ circuit symbol wires]
+    
+    \node (x) at (0,0) {$x$};
+    \node (y) at (0,1) {$y$};
+    \node (z) at (0,3) {$x$};
+    \node[nand gate US, minimum size=32pt, draw] at (1.5,0.5) (And) {};
+    \node[nand gate US, minimum size=32pt, draw] at (1.5,2.5) (And1) {};
+    \node[nand gate US, minimum size=32pt, draw] at (4.5,1.5) (And2) {};
+    \draw (x.east) - ++(right:3mm) |- (And.input 2);
+    \draw (y.east) - ++(right:3mm) |- (And.input 1);
+    \draw (z.east) - ++(right:3mm) |- (And1.input 1);
+    %\draw (y.east) - ++(right:3mm) |- (And1.input 2);
+    \draw (3.85,1.5) -- (3,1.5);
+    \draw (3,0.5) -- (3,2.5);
+    \draw (And.output) -- ($(And) + (1.5,0)$);
+    \draw (And1.output) -- ($(And) + (1.5,2)$);
+    \node (z) at ($(And2) + (1.9,0)$) {$x+xy$};
+    \draw (5.4,1.5) -- (5.8,1.5);
+    
+    \end{tikzpicture}
+    \end{center}
+    
+\subsection{Procedure for flashing it in Arduino}
+
+First the above boolean expression is implemented in C++ language. You can find the code (main.cpp)in the same repository.
+
+We use platformio to to generate filmware files And then we flash the code into Arduino.  Now for verification, we need to give the input from multi board. We can observe the output in the arduino board by modifying the input.
+
+\newpage
+The below code be flashed into Arduino.
+\begin{verbatim}
+#include <Arduino.h>
+
+# define X 2
+# define Y 3
+int x,y,c,d,out;
+
+void setup() {
+  pinMode(LED_BUILTIN,OUTPUT);
+  pinMode(X,INPUT);
+  pinMode(Y,INPUT);
+ }
+
+int nand(int a, int b){
+  return !(a && b);}
+
+ void loop() {
+
+x=digitalRead(X);
+y=digitalRead(Y);
+      			
+c = nand(x,x);
+d = nand(x,y);       					
+out = nand(c, d);
+if(out==1)
+  digitalWrite(LED_BUILTIN,HIGH);
+else
+  digitalWrite(LED_BUILTIN,LOW);
+}
+\end{verbatim}
+
+\end{document}
